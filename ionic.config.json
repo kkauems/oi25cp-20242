@@ -1,0 +1,7 @@
+{
+  "name": "oi25cp-ionic",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
