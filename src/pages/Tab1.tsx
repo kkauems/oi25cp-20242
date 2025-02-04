@@ -4,22 +4,20 @@ import { BleClient, ScanResult, BleDevice, numberToUUID, textToDataView } from '
 import { useState } from 'react';
 
 const Tab1: React.FC = () => {
-  const [devices, setDevices] = useState<ScanResult[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<BleDevice | null>(null);
   const [isPaired, setIsPaired] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | IonicSafeString | undefined>(undefined);
+  const [bondedDevices, setBondedDevices] = useState<BleDevice[]>([]);
 
-  const startScan = async () => {
-    setIsScanning(true);
-    setDevices([]);
+  const getBondedDevices = async () => {
     try {
       await BleClient.initialize();
-      await BleClient.requestLEScan({}, (result) => {
-        setDevices((prevDevices) => [...prevDevices, result]);
-      });
+      const devices = await BleClient.getBondedDevices();
+      setBondedDevices(devices);
     } catch (error) {
-      console.error('Error initializing Bluetooth:', error);
+      console.error('Error getting bonded devices:', error);
+      setAlertMessage('Failed to get bonded devices');
     }
   };
 
@@ -37,11 +35,11 @@ const Tab1: React.FC = () => {
       setIsScanning(false);
     }
   };
-
+  
   const sendData = async (data: DataView) => {
     if (selectedDevice) {
       try {
-        const serviceUUID = numberToUUID(0x1800);
+        const serviceUUID = numberToUUID(0xABF0);
         const characteristicUUID = numberToUUID(0xABF1);
         await BleClient.write(selectedDevice.deviceId, serviceUUID, characteristicUUID, data);
         setAlertMessage('Data sent successfully');
@@ -52,29 +50,29 @@ const Tab1: React.FC = () => {
     }
   };
 
+  
+
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Tab 1</IonTitle>
+          <IonTitle>Gravar</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Tab 1</IonTitle>
+            <IonTitle size="large">Gravar</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <IonButton onClick={startScan} disabled={isScanning}>
-            {isScanning ? 'Scanning...' : 'Scan For Devices'}
-          </IonButton>
+          <IonButton onClick={getBondedDevices}>Get Bonded Devices</IonButton>
           <IonList>
-            {devices.map((device, index) => (
-              <IonItem key={index} button onClick={() => selectDevice(device.device)}>
+            {bondedDevices.map((device, index) => (
+              <IonItem key={index} button onClick={() => selectDevice(device)}>
                 <div>
-                <div>{device.device.name|| 'Unnamed Device'}</div> 
-                <div>{device.device.deviceId}</div>
+                  <div>{device.name || 'Unnamed Device'}</div>
+                  <div>{device.deviceId}</div>
                 </div>
               </IonItem>
             ))}
@@ -90,7 +88,7 @@ const Tab1: React.FC = () => {
             message={alertMessage}
             buttons={['OK']}
           />
-        </IonContent>
+        </IonContent> 
       </IonContent>
     </IonPage>
   );
