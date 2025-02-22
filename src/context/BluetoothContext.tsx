@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { BleDevice, numberToUUID } from '@capacitor-community/bluetooth-le';
+import { BleDevice, BleClient, numberToUUID } from '@capacitor-community/bluetooth-le';
 
 interface BluetoothContextProps {
   selectedDevice: BleDevice | null;

@@ -2,19 +2,21 @@ import { IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonAle
 import { textToDataView, BleClient } from '@capacitor-community/bluetooth-le';
 import { useState } from 'react';
 import { useBluetooth } from '../context/BluetoothContext';
-import StorageService from '../services/StorageService';
+import StorageService, { BDProps } from '../services/StorageService';
 
 const TransmitData: React.FC = () => {
   const { selectedDevice, serviceUUID, writeUUID, readUUID, readData, setReadData, writeData, setWriteData } = useBluetooth();
   const [alertMessage, setAlertMessage] = useState<string | IonicSafeString | undefined>(undefined);
   const [inputNumber, setInputNumber] = useState<string>('');
   const [isNumberEntered, setIsNumberEntered] = useState(false);
-  const [storedData, setStoredData] = useState<string[]>([]);
+  const [finishedTransmission, setFinishedTransmission] = useState(false);
+  const [storedData, setStoredData] = useState<BDProps[]>([]);
+  const [selectedData, setSelectedData] = useState<BDProps | null>(null);
 
   useIonViewWillEnter(() => {
     const initializeData = async () => {
       await StorageService.initialize();
-      const data = await StorageService.getData('data') || [];
+      const data = await StorageService.getData('data');
       setStoredData(data);
     };
     initializeData();
@@ -26,39 +28,30 @@ const TransmitData: React.FC = () => {
     setIsNumberEntered(value.trim() !== '');
   };
 
-  const readDataFromBLE = async () => {
-    if (selectedDevice) {
-      try {
-        await BleClient.startNotifications(selectedDevice.deviceId, serviceUUID, readUUID, (data) => {
-          const decodedData = new TextDecoder().decode(data);
-          setReadData(decodedData);
-        });
-        if(readData === '100') {
-          await BleClient.stopNotifications(selectedDevice.deviceId, serviceUUID, readUUID);
-        }
-      } catch (error) {
-        setAlertMessage('Falha na comunicação com o dispositivo');
-      }
-    }
-  };
-
-  const sendDataToBLE = async (data: string) => {
-    if (selectedDevice) {
+  const sendDataToBLE = async (data: string) => { 
+    if (selectedDevice && data) {
       try {
         setWriteData(data);
         await BleClient.write(selectedDevice.deviceId, serviceUUID, writeUUID, textToDataView(data));
-        if(data !== 'transmitir') {
-          readDataFromBLE();
-        }
+        setFinishedTransmission(true);
+
       } catch (error) {
         setAlertMessage('Falha na comunicação com o dispositivo');
       }
     }
   };
 
-  const handleStoredDataClick = (data: string) => {
-    setInputNumber(data);
+  const handleStoredDataClick = (data: BDProps) => {
+    setSelectedData(data);
+    setInputNumber(data.accountCode);
     setIsNumberEntered(true);
+  };
+
+  const clearTransmission = () => {
+    setFinishedTransmission(false);
+    setInputNumber('');
+    setIsNumberEntered(false);
+    setSelectedData(null);
   };
 
   return (
@@ -82,16 +75,16 @@ const TransmitData: React.FC = () => {
                 onIonChange={handleNumberChange}
                 type="number"
               />
-              <IonButton onClick={() => sendDataToBLE(inputNumber)} disabled={!isNumberEntered}>Confirmar</IonButton>
-              <IonButton onClick={() => sendDataToBLE('transmitir')} disabled={!readData}>Transmitir</IonButton>
-              {readData && <p>Resposta do dispositivo: {readData}</p>}
+              <IonButton onClick={() => sendDataToBLE(selectedData?.accessCode || '')} disabled={!selectedData}>Confirmar</IonButton>
+              <IonButton onClick={() => sendDataToBLE('transmitir')} disabled={!finishedTransmission}>Transmitir</IonButton>
               <IonList>
                 {storedData.map((data, index) => (
                   <IonItem key={index} button onClick={() => handleStoredDataClick(data)}>
-                    {data}
+                    {data.accountCode}
                   </IonItem>
                 ))}
               </IonList>
+              <IonButton onClick={clearTransmission}>Limpar</IonButton>
             </div>
           <IonAlert
             isOpen={!!alertMessage}

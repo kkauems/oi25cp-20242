@@ -21,7 +21,7 @@ const SelectDeviceTab: React.FC = () => {
 
   const selectDevice = async (device: BleDevice) => {
     try {
-      await BleClient.connect(device.deviceId, onDisconnect);
+      await BleClient.connect(device.deviceId);
       setSelectedDevice(device);
       setAlertMessage(`Conectado a ${device.name || 'Dispositivo não reconhecido'}`);
     } catch (error) {
