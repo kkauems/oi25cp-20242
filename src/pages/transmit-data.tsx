@@ -16,7 +16,7 @@ const TransmitData: React.FC = () => {
   useIonViewWillEnter(() => {
     const initializeData = async () => {
       await StorageService.initialize();
-      const data = await StorageService.getData('data');
+      const data = await StorageService.getData('data') || [];
       setStoredData(data);
     };
     initializeData();

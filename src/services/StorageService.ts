@@ -1,8 +1,8 @@
 import { Storage } from '@ionic/storage';
 
 export interface BDProps {
-  accessCode: string;
   accountCode: string;
+  accessCode: string;
 }
 
 class StorageService {
@@ -14,13 +14,17 @@ class StorageService {
   }
 
   async getData(key: string): Promise<BDProps[]> {
-    return this.storage ? await this.storage.get(key) || [] : [];
+    if (!this.storage) {
+      await this.initialize();
+    }
+    return (await this.storage?.get(key)) || [];
   }
 
   async setData(key: string, data: BDProps[]): Promise<void> {
-    if (this.storage) {
-      await this.storage.set(key, data);
+    if (!this.storage) {
+      await this.initialize();
     }
+    await this.storage?.set(key, data);
   }
 }
 

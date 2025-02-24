@@ -50,7 +50,7 @@ const SelectDeviceTab: React.FC = () => {
             <IonTitle size="large">Selecionar Dispositivo</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <IonButton onClick={getBondedDevices} disabled={isScanning}>Dispositivos Pareados</IonButton>
+        <IonButton onClick={getBondedDevices} disabled={isScanning}>Procurar Dispositivos Pareados</IonButton>
         <IonList>
           {bondedDevices.map((device, index) => (
             <IonItem key={index} button onClick={() => selectDevice(device)}>
